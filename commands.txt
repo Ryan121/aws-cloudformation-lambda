@@ -1,0 +1,4 @@
+session = awsutils.get_session('eu-west-2')
+client = session.client('ec2')
+demo = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['demo-instance']}])
+instance_id = demo['Reservations'][0]['Instances'][0]['InstanceId']
