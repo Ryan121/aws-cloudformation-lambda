@@ -1,0 +1,15 @@
+"DeploymentApiGatewayMetricFilter": {
+    "Type": "AWS::Logs::MetricFilter",
+    "Properties": {
+      "LogGroupName": "/aws/apigateway/DeploymentApiGatewayLogGroup",
+      "FilterPattern": "{ ($.message = 'The EC2 serve is successfully running! Yay!') }",
+      "MetricTransformations": [
+        {
+          "MetricValue": "1",
+          "MetricNamespace": "ApiGateway",
+          "DefaultValue": 0,
+          "MetricName": "DeploymentApiGatewayUnauthorized"
+        }
+      ]
+    }
+  }

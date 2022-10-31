@@ -7,6 +7,13 @@ Parameters:
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
     Description: AMI ID pointer in AWS Systems Manager Parameter Store. Default value points to the
       latest Amazon Linux 2 AMI ID.
+
+  TopicName:
+    Type: String
+    Description:  Topic Name
+    Default: my-topic
+
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -75,28 +82,27 @@ Resources:
           files:
             '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json':
               content: !Sub |
-                {
+                {           
                   "agent": {
                       "metrics_collection_interval": 60,
                       "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log",
                       "run_as_user": "cwagent"
                   },
                   "logs": {
-                      "logs_collected": {
-                          "files": {
-                              "collect_list": [
-                                  {
-                                      "file_path": "/var/log/cloud-init.log",
-                                      "log_group_name": "ec2-instance-DSO-example/inspector/ec2/cloud-init.log",
-                                      "log_stream_name": "{instance_id}",
-                                      "timestamp_format": "%b %d %H:%M:%S"
-                                  }
-                              ]
-                            }
-                        }
+                    "logs_collected": {
+                      "files": {
+                        "collect_list": [
+                          {
+                            "file_path": "/var/log/secure.log",
+                            "log_group_name": "${EC2LogGroup}",
+                            "log_stream_name": "{instance_id}",
+                            "timestamp_format": "%b %d %H:%M:%S"
+                          }
+                        ]
+                      }
                     }
+                  }
                 }
-
         # Invoke amazon-cloudwatch-agent-ctl to restart the AmazonCloudWatchAgent.
         03_restart_amazon-cloudwatch-agent:
           commands:
@@ -161,8 +167,7 @@ Resources:
           rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource EC2Instance --region ${AWS::Region} --configsets default
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource EC2Instance --region ${AWS::Region}
-           $printf "%s\n" "Hello World from a configured EC2 instance!"
-           sudo shutdown -h now
+          echo "The EC2 server is successfully running!" > /var/log/secure.log
   EC2InstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -195,3 +200,94 @@ Resources:
       Roles:
         - !Ref EC2InstanceRole
       Path: /
+  EC2LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: 'ec2-instance'
+      RetentionInDays: 7
+  MetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref EC2LogGroup
+      FilterPattern: 'password changed'
+      MetricTransformations:
+        -
+          MetricValue: 1
+          MetricNamespace: EC2
+          MetricName: ChangePassword
+  MetricFilterTwo:
+    Type: AWS::Logs::MetricFilter
+    Properties: 
+      FilterName: BespokeFilter
+      FilterPattern: ' "The EC2 server is successfully running!" '
+      LogGroupName: !Ref EC2LogGroup
+      MetricTransformations: 
+        -
+          MetricValue: 1
+          MetricNamespace: EC2
+          MetricName: StringMatch
+  Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: PasswordChangedAlarm
+      MetricName: ChangePassword
+      Namespace: EC2
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+  AlarmTwo:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: StringMatchAlarm
+      AlarmActions:
+        - !Ref AlarmSNSTopic
+      MetricName: StringMatch
+      Namespace: EC2
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+  AlarmSNSTopic:
+   Type: AWS::SNS::Topic
+   DeletionPolicy: Retain
+   Properties: 
+     Subscription: 
+       - Endpoint: "r.sers14@gmail.com"
+         Protocol: "email"
+     TopicName: !Ref TopicName
+
+  # EventRule:
+  #   Type: AWS::Events::Rule
+  #   Properties:
+  #     Description: 'test event'
+  #     EventBusName: "MyBusName"
+  #     EventPattern:
+  #       source:
+  #       - aws.ec2
+  #       detail-type:
+  #       - EC2 Instance State-change Notification
+  #       detail:
+  #         state:
+  #         - stopped
+  #         Id: 
+  #         instance-id:
+  #         - i-0b63d58a32d95dd05
+  #     Targets:
+  #       -
+  #         Arn: !GetAtt TestLambda.Arn
+  #         Id: 'RSEC2Lambda'
+  # LambdaInvokePermission:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     Action: 'lambda:InvokeFunction'
+  #     FunctionName: !GetAtt TestLambda.Arn
+  #     Principal: 'events.amazonaws.com'
+  #     SourceArn: !GetAtt EventRule.Arn  
+
+
+

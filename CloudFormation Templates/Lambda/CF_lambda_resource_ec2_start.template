@@ -1,0 +1,81 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+      "RSEC2Lambda": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "FunctionName": "RSEC2Lambda",
+          "Handler": "lambda_function_ec2_start2.lambda_handler",
+          "Role": {
+            "Fn::GetAtt": [
+              "RSEC2LambdaRole",
+              "Arn"
+            ]
+          },
+          "Code": {
+            "S3Bucket": "rs-lambda-functions-121",
+            "S3Key": "lambda_function_ec2_start2"
+          },
+          "Runtime": "python3.8",
+          "Timeout": 300
+        }
+      },
+      "RSEC2LambdaRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "RoleName": "RSEC2LambdaRole",
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [ "lambda.amazonaws.com" ]
+              },
+              "Action": [ "sts:AssumeRole" ]
+            }]
+          },
+          "Path": "/",
+          "Policies": [{
+            "PolicyName": "AWSLambdaBasicExecutionRole",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:PutLogEvents"
+                ],
+                "Resource": "*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "ec2:Start*",
+                  "ec2:Stop*"
+                ],
+                "Resource": "*"
+              }]
+            }
+          },
+          {
+            "PolicyName": "AmazonS3FullAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": "s3:*",
+                "Resource": [
+                  "arn:aws:s3:::exchange-data-raw",
+                  "arn:aws:s3:::exchange-data-raw/*"
+                ]
+              }]
+            }
+          }]
+        }
+      }
+
+
+    }
+}
+

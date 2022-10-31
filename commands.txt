@@ -2,3 +2,25 @@ session = awsutils.get_session('eu-west-2')
 client = session.client('ec2')
 demo = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['demo-instance']}])
 instance_id = demo['Reservations'][0]['Instances'][0]['InstanceId']
+
+
+# Zip lambda function and upload to s3 bucket ofr reference within AWS CloudFormation
+$ aws s3api put-object --bucket rs-lambda-functions-121 --key lambda_function_ec2_start --region eu-west-2 --body lamda_stack_ec2_start.zip
+
+# Create the cloudformation stack which in turn creates a Lambda function and the required roles and permissions to get the Python function from S3
+aws cloudformation create-stack --stack-name ec2start --template-body file://lambda_resource.template --capabilities CAPABILITY_NAMED_IAM
+
+# Invoke the lambda function manually - to test
+aws lambda invoke --function-name RSEC2Lambda --invocation-type RequestResponselambda-result.txt
+
+# Start EC2 instance by running lambda function
+aws lambda invoke --cli-binary-format raw-in-base64-out --function-name RSEC2Lambda --payload '{ "name": "Bob" }' response.json
+
+# Stop EC2 instance by running lambda function
+aws lambda invoke --cli-binary-format raw-in-base64-out --function-name RSEC2LambdaStop --payload '{ "name": "Bob" }' response.json
+
+# Create stack from cli
+aws cloudformation deploy --template-file template.yaml --stack-name static-website
+aws cloudformation deploy --template-file "./CloudFormation Templates/Stacks/dyno_template.yml" --stack-name dynodb
+
+sudo shutdown -h now
