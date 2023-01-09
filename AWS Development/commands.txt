@@ -1,0 +1,15 @@
+# Upload object to s3
+aws s3 cp remove_packer_roles.yml s3://test-cf-lambda-bucket-090123
+aws s3 cp remove_packer_roles s3://test-cf-lambda-bucket-090123
+
+# Create a cloudformation stack from local file
+aws cloudformation create-stack --stack-name demo-stack --template-body file://remove_packer_roles.yml --capabilities CAPABILITY_NAMED_IAM
+
+# Describe stack status from Cloudformation
+aws cloudformation describe-stacks --stack-name demo-stack-2
+
+# Delete stack from Cloudformation
+aws cloudformation delete-stack --stack-name demo-stack-2
+
+# Remove specific object from s3
+aws s3 rm s3://test-cf-lambda-bucket-090123 --recursive --exclude "*" --include "remove_packer_roles.zip"

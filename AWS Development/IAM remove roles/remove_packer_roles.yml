@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  RemPackerRolesLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: RemoveStalePackerRoles
+      Handler: remove_packer_roles.lambda_handler 
+      Role: !GetAtt 
+        - RemPackerRolesLambdaRole
+        - Arn
+      Code:
+        S3Bucket: test-cf-lambda-bucket-090123
+        S3Key: remove_packer_roles.zip
+      Runtime: python3.8
+      Timeout: 300
+  RemPackerRolesLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: RemPackerRolesLambdaRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: RemovePackerRolesLambdaExecutionRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - 'iam:DeleteRolePolicy*'
+                  - 'iam:DeleteRole*'
+                  - 'iam:DetachRolePolicy*'
+                  - 'iam:DeleteInstanceProfile*'
+                  - 'iam:DeletePolicy*'
+                  - 'iam:GetInstanceProfile*' 
+                  - 'iam:GetPolicy*'
+                  - 'iam:GetRole*'
+                  - 'iam:GetRolePolicy*'
+                  - 'iam:ListAttachedRolePolicies*'
+                  - 'iam:ListInstanceProfiles*'
+                  - 'iam:ListInstanceProfilesForRole*'
+                  - 'iam:ListRolePolicies*'
+                  - 'iam:ListRoles*'
+                  - 'iam:RemoveRoleFromInstanceProfile*'
+                Resource: '*'
+        - PolicyName: AmazonS3FullAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 's3:*'
+                Resource:
+                  - 'arn:aws:s3:::exchange-data-raw'
+                  - 'arn:aws:s3:::exchange-data-raw/*'
