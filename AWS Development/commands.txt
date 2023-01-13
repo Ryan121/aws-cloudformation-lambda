@@ -4,7 +4,7 @@ aws s3 cp remove_packer_roles s3://test-cf-lambda-bucket-090123
 
 # Create a cloudformation stack from local file
 aws cloudformation create-stack --stack-name demo-stack --template-body file://remove_packer_roles.yml --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation create-stack --stack-name demo-stack --template-body file://remove_snapshots-inline.yml --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation create-stack --stack-name demo-stack-packer --template-body file://build_ami_notify-inline.yml --capabilities CAPABILITY_NAMED_IAM
 
 # Describe stack status from Cloudformation
 aws cloudformation describe-stacks --stack-name demo-stack-2

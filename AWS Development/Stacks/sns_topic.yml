@@ -2,7 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Template to Create an SNS Topic and Subscriptions
 
 Parameters:
-
   TopicName:
     Type: String
     Description:  Topic Name
