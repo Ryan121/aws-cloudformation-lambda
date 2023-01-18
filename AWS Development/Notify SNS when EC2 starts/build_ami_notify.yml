@@ -13,6 +13,11 @@ Parameters:
     Description:  The name for the cloudtrail S3 bucket
     Default: cloudtrail-trail
 
+  LogFilePrefix:
+    Type: String
+    Description:  The prefix for the log file
+    Default: cloudtrail-packer
+
   SQSQueue:
     Type: String
     Description: Standard queue for packer build notifications
@@ -62,6 +67,9 @@ Resources:
     Type: AWS::SNS::Topic
     DeletionPolicy: Retain
     Properties:
+      # Subscription: 
+      #  - Endpoint: "r.sers14@gmail.com"
+      #    Protocol: "email"
       TopicName: !Ref TopicName
 
   SNSTopicPolicy:
@@ -100,6 +108,8 @@ Resources:
 
   CloudWatchEventTrigger:
     DependsOn:
+    # - SNSTopic
+    # - SNSTopicPolicy
     - ImageBuildStatusLambda
     Type: AWS::Events::Rule
     Properties:
@@ -119,14 +129,19 @@ Resources:
       Targets:
         - Id: "ImageBuildStatusLambda"
           Arn: !GetAtt ImageBuildStatusLambda.Arn
+        # - Id: "SNStopic"
+        #   Arn: !Ref SNSTopic
+        # - Id: 'CloudwatchLogsTarget'
+        #   Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CFNLogGroup}"
+
 
 
   LogGroup: # A new log group
     Type: AWS::Logs::LogGroup
     Properties:
-      RetentionInDays: 3
+      RetentionInDays: 3 # optional
 
-  CloudTrailLogsRole: # Trail role
+  CloudTrailLogsRole: # A role for your trail
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -148,6 +163,23 @@ Resources:
             - 'logs:PutLogEvents'
             Resource: !GetAtt 'LogGroup.Arn'
 
+  # CloudTrailLogsPolicy: # The policy for your role
+  #   Type: AWS::IAM::Policy
+  #   Properties:
+  #     PolicyDocument:
+  #       Statement:
+  #       - Action:
+  #         - "logs:PutLogEvents"
+  #         - "logs:CreateLogStream"
+  #         Effect: Allow
+  #         Resource: "*"
+  #           # Fn::GetAtt:
+  #           # - LogGroup
+  #           # - Arn
+  #       Version: '2012-10-17'
+  #     PolicyName: DefaultPolicy
+  #     Roles:
+  #     - Ref: CloudTrailLogsRole
 
   CloudTrail: # The trail
     Type: AWS::CloudTrail::Trail
@@ -167,8 +199,9 @@ Resources:
         Fn::GetAtt:
         - CloudTrailLogsRole
         - Arn
+      # SnsTopicName: !GetAtt 'SNSTopic.TopicName'
 
-
+    # - SNSTopic
   ImageBuildStatusLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
@@ -455,15 +488,3 @@ Outputs:
   TopicArn: 
     Description: Arn of Created SNS Topic
     Value: !Ref SNSTopic
-  
-  SQSArn: 
-    Description: Arn of Created SQS Queue
-    Value: !Ref StandardQueue
-
-  BucketArn:
-    Description: Arn of Created Bucket
-    Value: !Ref BucketName
-
-  CloudTrailArn:
-    Description: Arn of Created Trail
-    Value: !Ref CloudTrail

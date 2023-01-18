@@ -3,8 +3,14 @@ There is a requirement to know when instances are started to build AMIs. Thus, w
 SNS notification to the subscribed users.
 
 # Solution
-A lambda function has been created in Python that deletes all stale instance or volume based snapshots
-The function takes a single payload object, 'age', which refers to the  minimum age (in days) of snapshots that require deletion.
-The payload format is {"age": "7"}. This example deletes all snapshots that are not associated with any AMIs that are 7 days old or older
-The function logs all deleted snapshots in Cloudwatch and returns a successful or unsuccssful status code.
-The lambda function was integrated into a Cloudformation template for deployment.
+A CloudFormationo template was created to deploy an S3 bucket, CloudTrail trail, SQS queue, , EventBridge rule, SNS topic and Lambda function to detect packer builds, notify subsribers to the SNS topic of when an EC2 instance is spun up to build a new image, when the image is being created and when the build EC2 instance is terminated. When terminating the instance, the id of AMI due to be created is checked to ensure it exists and the user is notified if the build was
+successful/unsuccessful.
+
+An S3 bucket was created to store CloudTrail logs. Logs are retained for 7 days.
+A CloudTrail trail was created to log AWS API calls
+An EventBridge rule was created to invoke a Lambda function when certain API calls are made
+The lambda function pushes messages to SNS to notify the status of the AMI creation process
+An SQS queue was utilised to persist the AMI id of the image being created and published within the Lambda function
+Finally, the SQS message is deleted by the Lambda when the TerminateInstances API call is made by a packer build when 
+it matches an exisiting (just built) AMI within the account.
+
