@@ -71,9 +71,9 @@ Resources:
       - Ref: SNSTopic
       PolicyDocument:
         Version: '2008-10-17'
-        Id: __default_policy_ID
+        Id: __default_sns_policy_ID
         Statement:
-        - Sid: __default_statement_ID
+        - Sid: __default_sns_statement_ID
           Effect: Allow
           Action:
           - sns:Publish
@@ -459,11 +459,3 @@ Outputs:
   SQSArn: 
     Description: Arn of Created SQS Queue
     Value: !Ref StandardQueue
-
-  BucketArn:
-    Description: Arn of Created Bucket
-    Value: !Ref BucketName
-
-  CloudTrailArn:
-    Description: Arn of Created Trail
-    Value: !Ref CloudTrail
