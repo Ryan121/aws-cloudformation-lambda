@@ -24,3 +24,5 @@ aws cloudformation deploy --template-file template.yaml --stack-name static-webs
 aws cloudformation deploy --template-file "./CloudFormation Templates/Stacks/dyno_template.yml" --stack-name dynodb
 
 sudo shutdown -h now
+
+aws cloudformation deploy --template-file "./teams_notifcations_inline.yml" --stack-name demo-stack-2 --capabilities CAPABILITY_NAMED_IAM
