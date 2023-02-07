@@ -88,30 +88,7 @@ def lambda_handler(event, context):
         # imageID = event['Detail']['ImageId']
         # createdAMI = event['DetailType']
 
-        response = sns_client.list_topics()
-        for topic in response['Topics']:
-            if 'teams-notification-topic' in topic['TopicArn']:
-                topic_arn = topic['TopicArn']
-                print(topic['TopicArn'])
-
-        # Update Teams via Email notification - Publish message to topic
-        response = sns_client.publish(
-            TargetArn=topic_arn,
-            Message=email_message
-        )
-        print(response)
-
-        # Update Teams via Webhook notification
-        encoded_wh_msg = json.dumps(webhook_message).encode('utf-8')
-        response = http.request('POST', url, body=encoded_wh_msg)
-        print(f"Status: {response.status}, Data: {response.data}")
-
-        logger.info('Message sent successfully!')
-
-        return {
-            'statusCode': 201,
-            'body': 'Function run successfully. Please see logs for more details.'
-        }
+        
 
     except Exception as e:
         logger.error(e)
